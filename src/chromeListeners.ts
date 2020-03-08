@@ -80,16 +80,15 @@ function getPageInfo() {
     return JSON.stringify(result);
 }
 
+function blockPage() {
+    window.location.href = "http://yoniwas.com";
+}
+
 function processAllFramesHTML(tabid : number) {
     console.log("Processing tab id:" + tabid);
     chrome.tabs.executeScript(tabid, {
         allFrames: true,
         code: calledFunction(getPageInfo.toString())
-        /* 'JSON.stringify({ \
-                    top: window.top === window, \
-                    url: location.href, \
-                    html:((!!document)  ? document.getElementsByTagName("html")[0].outerHTML : "no-html") \
-               })' */
     }, function(results : string[]) {
         if (!isExtError(results)) {
             var foundBad = false;
@@ -101,9 +100,18 @@ function processAllFramesHTML(tabid : number) {
                     if (info.html.indexOf("gogogo") > -1)  {
                         foundBad = true;
                         console.log("Found bad");
-                        /* chrome.tabs.executeScript(tabid, {
-                            code: 'window.location.href = "http://yoniwas.com/"'
-                        }) */
+
+                        chrome.tabs.executeScript(
+                            tabid, 
+                            {
+                                code: calledFunction(blockPage.toString())
+                            },
+                            function() {
+                                setTimeout(function() {
+                                    // TODO: Update html (same tab) with blocked info
+                                }, 1000);
+                            }
+                        )
                     }
                 }
             });
