@@ -1,0 +1,19 @@
+{
+    "name": "selfc-ext",
+    "version": "1.0",
+    "description": "SelfCAC Chrome Ext",
+    "manifest_version": 2,
+    "background": {
+        "scripts": ["bundle.js"],
+        "persistent": true
+      },
+    "permissions": [
+        "<all_urls>",
+        "webRequest",
+        "tabs",
+        "webRequestBlocking"
+    ],
+    "browser_action": {
+        "default_title": "SelfCAC Chrome Manager"
+    }
+  }
