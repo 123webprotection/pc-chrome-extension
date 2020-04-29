@@ -1,4 +1,4 @@
-function calledFunction(functionCode : string) :string {
+function runningFuncString(functionCode : string) :string {
     return "(" + functionCode + ")()";
 }
 
@@ -13,7 +13,7 @@ function isExtError(results : Array<any>) : boolean {
 function onExtIconClickSetup() {
     chrome.browserAction.onClicked.addListener(function(tab) {
         chrome.tabs.executeScript({
-            allFrames: true,
+            allFrames: false,
             code: 'alert(1)'
         }, function(results) {
         });
@@ -27,7 +27,7 @@ function changeHeadersListenerSetup() {
             //TODO: sign this 3:
                 //1. details.url
                 //2. details.method
-                //3. details.type
+                //3. details.type (chrome resource type)
             details.requestHeaders.push({name:"SELFC-TYPE",value:details.type})
             return { requestHeaders: details.requestHeaders };
         },
@@ -80,38 +80,26 @@ function getPageInfo() {
     return JSON.stringify(result);
 }
 
-function blockPage() {
-    window.location.href = "http://yoniwas.com";
-}
 
 function processAllFramesHTML(tabid : number) {
     console.log("Processing tab id:" + tabid);
     chrome.tabs.executeScript(tabid, {
         allFrames: true,
-        code: calledFunction(getPageInfo.toString())
+        code: runningFuncString(getPageInfo.toString())
     }, function(results : string[]) {
         if (!isExtError(results)) {
-            var foundBad = false;
+            var foundBadPhrase = false;
 
             results.forEach(function(str, index) {
-                if (!foundBad) {
+                if (!foundBadPhrase) {
                     var info = JSON.parse(str) as FrameContentInfo;
                     // TODO: Filter (navigate with js - say word + url + isTop)
+                    
                     if (info.html.indexOf("gogogo") > -1)  {
-                        foundBad = true;
+                        foundBadPhrase = true;
                         console.log("Found bad");
 
-                        chrome.tabs.executeScript(
-                            tabid, 
-                            {
-                                code: calledFunction(blockPage.toString())
-                            },
-                            function() {
-                                setTimeout(function() {
-                                    // TODO: Update html (same tab) with blocked info
-                                }, 1000);
-                            }
-                        )
+                        blockTab(tabid);
                     }
                 }
             });
@@ -119,7 +107,29 @@ function processAllFramesHTML(tabid : number) {
     });
 }
 
+function blockTab(tabid: number) {
+    function blockPage() {
+        window.location.href = "http://yoniwas.com";
+    }
+
+    chrome.tabs.executeScript(tabid, {
+        code: runningFuncString(blockPage.toString())
+    }, function () {
+        setTimeout(function () {
+            // TODO: Update html (same tab) with blocked info
+        }, 1000);
+    });
+}
+
 export function setUpExtention() {
+    fetch('http://localhost:7171/')
+    .then((response) => {return response.text();}).then((data) => {
+        console.log(data);
+        fetch('http://localhost:7171/next2')
+        .then((response) => {return response.text();}).then((data) => {console.log(data);});
+    });
+    
+
     onExtIconClickSetup();    
     changeHeadersListenerSetup();
     setInterval(processAllSelectedTabs, 15 * 1000);
