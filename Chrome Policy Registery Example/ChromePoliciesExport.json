@@ -1,0 +1,105 @@
+{
+   "chromeMetadata": {
+      "OS": "Windows 10 OS Version 1809 (Build 17763.1158)",
+      "application": "Google Chrome",
+      "revision": "44f4233f08910d83b146130c1938256a2e05b136-refs/branch-heads/4044@{#963}",
+      "version": "81.0.4044.122 (Official Build) (64-bit) (cohort: Stable)"
+   },
+   "chromePolicies": {
+      "AlwaysOpenPdfExternally": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": true
+      },
+      "BackgroundModeEnabled": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": false
+      },
+      "DeveloperToolsDisabled": {
+         "error": "This policy has been deprecated.",
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": true
+      },
+      "DownloadDirectory": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": "C:\\ProxyChromeFlow\\FilteredDownloads"
+      },
+      "ExtensionInstallBlacklist": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": [ "*" ]
+      },
+      "ExtensionInstallForcelist": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": [ "cjpalhdlnbpafiamejdnhcphjbkeiagm" ]
+      },
+      "ExtensionInstallWhitelist": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": [ "cjpalhdlnbpafiamejdnhcphjbkeiagm" ]
+      },
+      "IncognitoModeAvailability": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": 1
+      },
+      "PromptForDownloadLocation": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": false
+      },
+      "ProxySettings": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": {
+            "ProxyMode": "direct"
+         }
+      },
+      "QuicAllowed": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": false
+      },
+      "ThirdPartyBlockingEnabled": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": true
+      },
+      "URLBlacklist": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": [ "777.com", "file://*", "javascript://*", "cjpalhdlnbpafiamejdnhcphjbkeiagm" ]
+      },
+      "URLWhitelist": {
+         "level": "mandatory",
+         "scope": "user",
+         "source": "platform",
+         "value": [ "chrome-extension://maybe-cjpalhdlnbpafiamejdnhcphjbkeiagm/document-blocked.html" ]
+      }
+   },
+   "extensionPolicies": {
+      "cjpalhdlnbpafiamejdnhcphjbkeiagm": {
+
+      },
+      "ghbmnnjooekpmoecnnnilnnbdlolhkhi": {
+
+      }
+   }
+}
