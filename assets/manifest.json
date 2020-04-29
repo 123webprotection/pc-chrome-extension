@@ -15,5 +15,8 @@
     ],
     "browser_action": {
         "default_title": "SelfCAC Chrome Manager"
+    },
+    "storage": {
+      "managed_schema": "managed_schema.json"
     }
   }

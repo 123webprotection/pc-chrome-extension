@@ -20,7 +20,7 @@ function onExtIconClickSetup() {
     })
 }
 
-function changeHeadersListenerSetup() {
+function HeadersListenerSetup() {
     chrome.webRequest.onBeforeSendHeaders.addListener(
         //https://developer.chrome.com/extensions/webRequest#type-HttpHeaders
         function(details) {
@@ -32,8 +32,16 @@ function changeHeadersListenerSetup() {
             return { requestHeaders: details.requestHeaders };
         },
         {urls: ['<all_urls>']}, // filters
-        [ 'blocking', 'requestHeaders','extraHeaders'] // specs
+        [ 'blocking', 'requestHeaders','extraHeaders'] // specs from docs
     );
+}
+
+function tabUrlChangeListenerSetup() {
+    chrome.tabs.onUpdated.addListener((tabid, changeInfo, tabObj)=>{
+        if (tabid && changeInfo && changeInfo.url) {
+
+        }
+    });
 }
 
 function processAllSelectedTabs() {
@@ -49,7 +57,7 @@ function processAllSelectedTabs() {
                     if (tab.highlighted) {
                         // [window.id, tab.id] Tab.id is unique across windows 
                         //          (no need for window.id in executeScript)
-                        processAllFramesHTML(tab.id);
+                        processAllTabFramesHTML(tab.id);
                     }
                 }
             }
@@ -63,25 +71,25 @@ export interface FrameContentInfo {
     html: string,
 }
 
-function getPageInfo() {
-    var result : FrameContentInfo = {
-        top : true,
-        url : "no-url",
-        html: "no-html",
+
+function processAllTabFramesHTML(tabid : number) {
+    function getPageInfo() {
+        var result : FrameContentInfo = {
+            top : true,
+            url : "no-url",
+            html: "no-html",
+        }
+        result.top = window.top === window;
+        if (!!location && !!location.href)
+            result.url = location.href
+        if (!!document)
+            var elemList = document.getElementsByTagName("html")
+            if (!!elemList && elemList.length > 0)
+                result.html = elemList[0].outerHTML
+    
+        return JSON.stringify(result);
     }
-    result.top = window.top === window;
-    if (!!location && !!location.href)
-        result.url = location.href
-    if (!!document)
-        var elemList = document.getElementsByTagName("html")
-        if (!!elemList && elemList.length > 0)
-            result.html = elemList[0].outerHTML
 
-    return JSON.stringify(result);
-}
-
-
-function processAllFramesHTML(tabid : number) {
     console.log("Processing tab id:" + tabid);
     chrome.tabs.executeScript(tabid, {
         allFrames: true,
@@ -121,16 +129,27 @@ function blockTab(tabid: number) {
     });
 }
 
-export function setUpExtention() {
-    fetch('http://localhost:7171/')
+function getTokenFromManager() {
+      /* fetch('http://OpenSinun.local/getLatestTokenUrl')
     .then((response) => {return response.text();}).then((data) => {
         console.log(data);
         fetch('http://localhost:7171/next2')
         .then((response) => {return response.text();}).then((data) => {console.log(data);});
-    });
-    
+    }); */
 
-    onExtIconClickSetup();    
-    changeHeadersListenerSetup();
-    setInterval(processAllSelectedTabs, 15 * 1000);
+    // TODO: On fail token, open some tab with error.
+
+    console.log("Trying to get manager url");
+    chrome.storage.managed.get("token_url",(data)=> {
+        console.log(1,data);
+        console.log(2,data["token_url"]);
+    })
+}
+
+export function setUpExtention() {
+  
+    //onExtIconClickSetup();    
+    //HeadersListenerSetup();
+    //setInterval(processAllSelectedTabs, 15 * 1000); 
+
 }
