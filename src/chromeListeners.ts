@@ -37,9 +37,24 @@ function HeadersListenerSetup() {
 }
 
 function tabUrlChangeListenerSetup() {
+    function getReferrer() {
+        return document.referrer;
+    }
+    
     chrome.tabs.onUpdated.addListener((tabid, changeInfo, tabObj)=>{
         if (tabid && changeInfo && changeInfo.url) {
-
+            chrome.tabs.executeScript(tabid,{
+                allFrames: false,
+                code: runningFuncString(getReferrer.toString())
+            }, (result)=> {
+                if (!isExtError(result)) {
+                    var referrer : string = result[0];
+                    console.log("tab:", tabid, "new-url:", changeInfo.url, "ref:", referrer );
+                }
+                else {
+                    console.log("tab:", tabid, "new-url-no-referrer:", changeInfo.url);
+                }
+            })
         }
     });
 }
@@ -151,5 +166,5 @@ export function setUpExtention() {
     //onExtIconClickSetup();    
     //HeadersListenerSetup();
     //setInterval(processAllSelectedTabs, 15 * 1000); 
-
+    tabUrlChangeListenerSetup();
 }
