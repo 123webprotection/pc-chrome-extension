@@ -37,7 +37,7 @@ function HeadersListenerSetup() {
 }
 
 function tabUrlChangeListenerSetup() {
-    function getReferrer() {
+    function getReferrerCallback() {
         return document.referrer;
     }
     
@@ -45,7 +45,7 @@ function tabUrlChangeListenerSetup() {
         if (tabid && changeInfo && changeInfo.url) {
             chrome.tabs.executeScript(tabid,{
                 allFrames: false,
-                code: runningFuncString(getReferrer.toString())
+                code: runningFuncString(getReferrerCallback.toString())
             }, (result)=> {
                 if (!isExtError(result)) {
                     var referrer : string = result[0];
@@ -88,7 +88,7 @@ export interface FrameContentInfo {
 
 
 function processAllTabFramesHTML(tabid : number) {
-    function getPageInfo() {
+    function getPageInfoCallback() {
         var result : FrameContentInfo = {
             top : true,
             url : "no-url",
@@ -108,7 +108,7 @@ function processAllTabFramesHTML(tabid : number) {
     console.log("Processing tab id:" + tabid);
     chrome.tabs.executeScript(tabid, {
         allFrames: true,
-        code: runningFuncString(getPageInfo.toString())
+        code: runningFuncString(getPageInfoCallback.toString())
     }, function(results : string[]) {
         if (!isExtError(results)) {
             var foundBadPhrase = false;
@@ -131,12 +131,12 @@ function processAllTabFramesHTML(tabid : number) {
 }
 
 function blockTab(tabid: number) {
-    function blockPage() {
+    function blockPageCallback() {
         window.location.href = "http://yoniwas.com";
     }
 
     chrome.tabs.executeScript(tabid, {
-        code: runningFuncString(blockPage.toString())
+        code: runningFuncString(blockPageCallback.toString())
     }, function () {
         setTimeout(function () {
             // TODO: Update html (same tab) with blocked info
