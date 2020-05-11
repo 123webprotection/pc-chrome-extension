@@ -1,3 +1,5 @@
+
+
 function runningFuncString(functionCode : string) :string {
     return "(" + functionCode + ")()";
 }
@@ -11,13 +13,23 @@ function isExtError(results : Array<any>) : boolean {
 }
 
 function onExtIconClickSetup() {
-    chrome.browserAction.onClicked.addListener(function(tab) {
-        chrome.tabs.executeScript({
+    function getStatus() {
+        var ext_error = "{0}"
+        var alert_str = "No error yet 🤙"
+        if (ext_error == "" ) {
+            alert_str = "Error: " + ext_error;
+        }
+        alert(alert_str)
+    }
+
+     /* chrome.browserAction.onClicked.addListener(function(tab) {
+         chrome.tabs.executeScript({
             allFrames: false,
-            code: 'alert(1)'
+            code: runningFuncString(getStatus.toString()).replace('\{0\}', ext_error)
         }, function(results) {
-        });
-    })
+        });  
+        //chrome.browserAction.getPopup({})
+    })*/
 }
 
 function HeadersListenerSetup() {
@@ -161,10 +173,20 @@ function getTokenFromManager() {
     })
 }
 
+let ext_error :string = "";
+function updateStatus(status : string) {
+    ext_error = status;
+}
+
+export function getStatus() {
+    return ext_error;
+}
+(window as any)["getStatus"] = getStatus;
+
 export function setUpExtention() {
-  
-    //onExtIconClickSetup();    
+    setTimeout(()=>{updateStatus("Time Passed!")},5000)
+    onExtIconClickSetup();    
     //HeadersListenerSetup();
     //setInterval(processAllSelectedTabs, 15 * 1000); 
-    tabUrlChangeListenerSetup();
+    //tabUrlChangeListenerSetup();
 }
