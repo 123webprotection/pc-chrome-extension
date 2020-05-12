@@ -1,10 +1,11 @@
+import { StartupInfo, getStartupInfo } from './prepare';
 
 
 function runningFuncString(functionCode : string) :string {
     return "(" + functionCode + ")()";
 }
 
-function isExtError(results : Array<any>) : boolean {
+function isChromeError(results : Array<any>) : boolean {
     if (chrome.runtime.lastError || !results || !results.length) {
         console.log("Some error occurred", chrome.runtime.lastError);
         return true;
@@ -12,25 +13,7 @@ function isExtError(results : Array<any>) : boolean {
     return false;
 }
 
-function onExtIconClickSetup() {
-    function getStatus() {
-        var ext_error = "{0}"
-        var alert_str = "No error yet 🤙"
-        if (ext_error == "" ) {
-            alert_str = "Error: " + ext_error;
-        }
-        alert(alert_str)
-    }
 
-     /* chrome.browserAction.onClicked.addListener(function(tab) {
-         chrome.tabs.executeScript({
-            allFrames: false,
-            code: runningFuncString(getStatus.toString()).replace('\{0\}', ext_error)
-        }, function(results) {
-        });  
-        //chrome.browserAction.getPopup({})
-    })*/
-}
 
 function HeadersListenerSetup() {
     chrome.webRequest.onBeforeSendHeaders.addListener(
@@ -59,7 +42,7 @@ function tabUrlChangeListenerSetup() {
                 allFrames: false,
                 code: runningFuncString(getReferrerCallback.toString())
             }, (result)=> {
-                if (!isExtError(result)) {
+                if (!isChromeError(result)) {
                     var referrer : string = result[0];
                     console.log("tab:", tabid, "new-url:", changeInfo.url, "ref:", referrer );
                 }
@@ -76,7 +59,7 @@ function processAllSelectedTabs() {
         populate: true, // Populate Tabs object
         windowTypes: ['normal', 'popup'] // no devtool
     }, function callback(windows) {
-        if (!isExtError(windows)) {
+        if (!isChromeError(windows)) {
             for (let i = 0; i < windows.length; i++) {
                 const window = windows[i];
                 for (let j = 0; j < window.tabs.length; j++) {
@@ -122,7 +105,7 @@ function processAllTabFramesHTML(tabid : number) {
         allFrames: true,
         code: runningFuncString(getPageInfoCallback.toString())
     }, function(results : string[]) {
-        if (!isExtError(results)) {
+        if (!isChromeError(results)) {
             var foundBadPhrase = false;
 
             results.forEach(function(str, index) {
@@ -183,9 +166,16 @@ export function getStatus() {
 }
 (window as any)["getStatus"] = getStatus;
 
-export function setUpExtention() {
-    setTimeout(()=>{updateStatus("Time Passed!")},5000)
-    onExtIconClickSetup();    
+let startupInfo : StartupInfo = null;
+export async function setUpExtention() {
+    try {
+        startupInfo = await getStartupInfo();
+        updateStatus("Got initial info!");
+    }
+    catch(error) {
+        updateStatus(JSON.stringify(error));
+    }
+
     //HeadersListenerSetup();
     //setInterval(processAllSelectedTabs, 15 * 1000); 
     //tabUrlChangeListenerSetup();

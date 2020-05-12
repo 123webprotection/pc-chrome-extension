@@ -1,3 +1,4 @@
 import { setUpExtention } from "./chromeListeners";
 
-setUpExtention();
+setUpExtention()
+    .then(()=>{console.log("Done setup extensions")});
