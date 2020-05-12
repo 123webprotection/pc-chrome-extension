@@ -173,7 +173,8 @@ export async function setUpExtention() {
         updateStatus("Got initial info!");
     }
     catch(error) {
-        updateStatus(JSON.stringify(error));
+        if (error)
+            updateStatus(JSON.stringify(error));
     }
 
     //HeadersListenerSetup();

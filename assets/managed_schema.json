@@ -6,6 +6,9 @@
       } ,
       "proxy_local" : {
         "type":"string"
+      },
+      "token_url" : {
+        "type":"string"
       }
     }
   }

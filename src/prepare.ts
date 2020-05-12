@@ -8,13 +8,15 @@ interface MangedStorage {
 
 function getRegistryInfo() : Promise<MangedStorage> {
     let result = new Promise<MangedStorage>((resolve,reject)=>{
-        chrome.storage.managed.get("manager_host",(data)=> {
-            let manager_host = data["manager_host"];
+        chrome.storage.managed.get("manager_host",(data1)=> {
+            console.log(data1);
+            let manager_host = data1["manager_host"];
             if (!manager_host) 
                 reject("Can't get manager_host");
 
-            chrome.storage.managed.get("proxy_local",(data)=> {
-                let proxy_local = data["proxy_local"];
+            chrome.storage.managed.get("proxy_local",(data2)=> {
+                console.log(data2);
+                let proxy_local = data2["proxy_local"];
                 if (!proxy_local) 
                     reject("Can't get proxy_local");
                 
