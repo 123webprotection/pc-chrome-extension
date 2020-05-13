@@ -1,4 +1,4 @@
-import { StartupInfo, getStartupInfo } from './prepare';
+import { StartupInfo } from './startup';
 
 
 function runningFuncString(functionCode : string) :string {
@@ -169,7 +169,7 @@ export function getStatus() {
 let startupInfo : StartupInfo = null;
 export async function setUpExtention() {
     try {
-        startupInfo = await getStartupInfo();
+        
         updateStatus("Got initial info!");
     }
     catch(error) {
