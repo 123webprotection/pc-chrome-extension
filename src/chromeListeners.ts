@@ -124,7 +124,7 @@ function processAllTabFramesHTML(tabid : number) {
     });
 }
 
-function blockTab(tabid: number, reason: string) {
+function blockTab(tabid: number, reason_html: string) {
     let blocked_url = `${PROXY_URL_PREFIX}${getBlockedEPPage()}`;
 
     function blockPageCallback() {
@@ -132,13 +132,13 @@ function blockTab(tabid: number, reason: string) {
     }
 
     function setReason(reason: string) {
-        document.getElementById("reason").innerText = "@"
+        document.getElementById("reason").innerHTML = "@"
     }
 
     let navigateFunction = 
         runningFuncString(blockPageCallback.toString()).replace("@",blocked_url);
     let changeReasonFunction = 
-        runningFuncString(setReason.toString()).replace("@", reason);
+        runningFuncString(setReason.toString()).replace("@", reason_html);
 
     chrome.tabs.executeScript(tabid, {
         code: navigateFunction
