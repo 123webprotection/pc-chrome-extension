@@ -2,7 +2,7 @@ import { setUpExtention } from "./chromeListeners";
 import { getTokenAndProxyAPI, Token } from './proxy-api';
 import { updateUiStatus } from "./popup";
 
-export const PROXY_URL : string = "http://public-api.web-filter.local";
+export const PROXY_URL_PREFIX : string = "http://public-api.web-filter.local";
 
 async function main() {
     try {

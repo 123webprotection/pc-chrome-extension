@@ -1,4 +1,4 @@
-import {  PROXY_URL } from './index';
+import {  PROXY_URL_PREFIX } from './index';
 import { xhrRequestJson, xhrRequestText } from './xhr-utils';
 import {hash} from './crypto'
 
@@ -17,6 +17,7 @@ export const API_CODENAMES = {
     manager_temp_url: "MANAGER_PORT_GET",
     get_blocked_phrases : "PHRASE_LIST_BROWSER",
     check_blocked : "REASON_BROWSER",
+    blocked_page: "BLOCK_HTML"
 }
 
 
@@ -32,20 +33,27 @@ export function getAPIEndpoint(code: string) {
 }
 
 export async function getTokenAndProxyAPI(debug_value: string = "") : Promise<void> {
+
+    ProxyAPI = 
+        await xhrRequestJson<ProxyAPIResponse>(PROXY_URL_PREFIX, "GET", null, [["Accept","application/json"]]);
+
     if (debug_value != "") {
         Token = debug_value;
         return;
     }
-
-    ProxyAPI = 
-        await xhrRequestJson<ProxyAPIResponse>(PROXY_URL, "GET", null, [["Accept","application/json"]]);
-    let manager_port = await xhrRequestText(PROXY_URL + getAPIEndpoint(API_CODENAMES.manager_temp_url));
-    let tokenInfo = await xhrRequestJson<TokenInfo>(`http://localhost:${manager_port}/`,"GET",null,
-            [["x-helper","anti-user"]]);
-    if ((hash(tokenInfo.salt,tokenInfo.token)) == tokenInfo.token_salted) {
-        Token = tokenInfo.token;
-    }
     else {
-        throw new Error("Can't verify token");
+        let manager_port = await xhrRequestText(PROXY_URL_PREFIX + getAPIEndpoint(API_CODENAMES.manager_temp_url));
+        let tokenInfo = await xhrRequestJson<TokenInfo>(`http://localhost:${manager_port}/`,"GET",null,
+                [["x-helper","anti-user"]]);
+        if ((hash(tokenInfo.salt,tokenInfo.token)) == tokenInfo.token_salted) {
+            Token = tokenInfo.token;
+        }
+        else {
+            throw new Error("Can't verify token");
+        }
     }
+}
+
+export function getBlockedUrlPage() {
+    return ProxyAPI[API_CODENAMES.blocked_page].ep;
 }

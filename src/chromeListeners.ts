@@ -1,5 +1,6 @@
-import { StartupInfo, Token } from './proxy-api';
+import { StartupInfo, Token, getBlockedUrlPage as getBlockedEPPage } from './proxy-api';
 import { hash } from './crypto';
+import { PROXY_URL_PREFIX } from './index';
 
 const bypass_header = "proxy-sha256";
 
@@ -41,10 +42,10 @@ function tabUrlChangeListenerSetup() {
             }, (result)=> {
                 if (!isChromeError(result)) {
                     var referrer : string = result[0];
-                    console.log("tab:", tabid, "new-url:", changeInfo.url, "ref:", referrer );
+                    //console.log("tab:", tabid, "new-url:", changeInfo.url, "ref:", referrer );
                 }
                 else {
-                    console.log("tab:", tabid, "new-url-no-referrer:", changeInfo.url);
+                    //console.log("tab:", tabid, "new-url-no-referrer:", changeInfo.url);
                 }
             })
         }
@@ -61,7 +62,8 @@ function processAllSelectedTabs() {
                 const window = windows[i];
                 for (let j = 0; j < window.tabs.length; j++) {
                     const tab = window.tabs[j];
-                    if (tab.highlighted) {
+                    if (tab.highlighted) { // highlighted = current selected tab
+
                         // [window.id, tab.id] Tab.id is unique across windows 
                         //          (no need for window.id in executeScript)
                         processAllTabFramesHTML(tab.id);
@@ -97,7 +99,7 @@ function processAllTabFramesHTML(tabid : number) {
         return JSON.stringify(result);
     }
 
-    console.log("Processing tab id:" + tabid);
+    //console.log("Processing tab id:" + tabid);
     chrome.tabs.executeScript(tabid, {
         allFrames: true,
         code: runningFuncString(getPageInfoCallback.toString())
@@ -114,7 +116,7 @@ function processAllTabFramesHTML(tabid : number) {
                         foundBadPhrase = true;
                         console.log("Found bad");
 
-                        blockTab(tabid);
+                        blockTab(tabid, "Found gogo and gogo is bad");
                     }
                 }
             });
@@ -122,42 +124,37 @@ function processAllTabFramesHTML(tabid : number) {
     });
 }
 
-function blockTab(tabid: number) {
+function blockTab(tabid: number, reason: string) {
+    let blocked_url = `${PROXY_URL_PREFIX}${getBlockedEPPage()}`;
+
     function blockPageCallback() {
-        window.location.href = "http://yoniwas.com";
+        window.location.href = "@";
     }
 
+    function setReason(reason: string) {
+        document.getElementById("reason").innerText = "@"
+    }
+
+    let navigateFunction = 
+        runningFuncString(blockPageCallback.toString()).replace("@",blocked_url);
+    let changeReasonFunction = 
+        runningFuncString(setReason.toString()).replace("@", reason);
+
     chrome.tabs.executeScript(tabid, {
-        code: runningFuncString(blockPageCallback.toString())
+        code: navigateFunction
     }, function () {
         setTimeout(function () {
-            // TODO: Update html (same tab) with blocked info
+            chrome.tabs.executeScript(tabid, {
+                code: changeReasonFunction
+            }, function () {});
         }, 1000);
     });
 }
-
-function getTokenFromManager() {
-      /* fetch('http://OpenSinun.local/getLatestTokenUrl')
-    .then((response) => {return response.text();}).then((data) => {
-        console.log(data);
-        fetch('http://localhost:7171/next2')
-        .then((response) => {return response.text();}).then((data) => {console.log(data);});
-    }); */
-
-    // TODO: On fail token, open some tab with error.
-
-    console.log("Trying to get manager url");
-    chrome.storage.managed.get("token_url",(data)=> {
-        console.log(1,data);
-        console.log(2,data["token_url"]);
-    })
-}
-
 
 
 let startupInfo : StartupInfo = null;
 export async function setUpExtention() {
     HeadersListenerSetup();
-    //setInterval(processAllSelectedTabs, 15 * 1000); 
-    //tabUrlChangeListenerSetup();
+    setInterval(processAllSelectedTabs, 2 * 1000); 
+    tabUrlChangeListenerSetup();
 }
