@@ -1,5 +1,5 @@
 import {  PROXY_URL } from './index';
-import { xhrRequestJson, xhrRequestText } from './utils';
+import { xhrRequestJson, xhrRequestText } from './xhr-utils';
 import {hash} from './crypto'
 
 interface TokenInfo {
@@ -31,7 +31,12 @@ export function getAPIEndpoint(code: string) {
     return ProxyAPI[code].ep;
 }
 
-export async function getTokenAndProxyAPI() {
+export async function getTokenAndProxyAPI(debug_value: string = "") : Promise<void> {
+    if (debug_value != "") {
+        Token = debug_value;
+        return;
+    }
+
     ProxyAPI = 
         await xhrRequestJson<ProxyAPIResponse>(PROXY_URL, "GET", null, [["Accept","application/json"]]);
     let manager_port = await xhrRequestText(PROXY_URL + getAPIEndpoint(API_CODENAMES.manager_temp_url));

@@ -1,4 +1,4 @@
-import { StartupInfo } from './startup';
+import { StartupInfo } from './proxy-api';
 
 
 function runningFuncString(functionCode : string) :string {
@@ -156,27 +156,11 @@ function getTokenFromManager() {
     })
 }
 
-let ext_error :string = "";
-function updateStatus(status : string) {
-    ext_error = status;
-}
 
-export function getStatus() {
-    return ext_error;
-}
-(window as any)["getStatus"] = getStatus;
 
 let startupInfo : StartupInfo = null;
 export async function setUpExtention() {
-    try {
-        
-        updateStatus("Got initial info!");
-    }
-    catch(error) {
-        if (error)
-            updateStatus(JSON.stringify(error));
-    }
-
+   
     //HeadersListenerSetup();
     //setInterval(processAllSelectedTabs, 15 * 1000); 
     //tabUrlChangeListenerSetup();
