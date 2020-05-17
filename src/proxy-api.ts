@@ -42,7 +42,7 @@ export async function getTokenAndProxyAPI(debug_value: string = "") : Promise<vo
     let manager_port = await xhrRequestText(PROXY_URL + getAPIEndpoint(API_CODENAMES.manager_temp_url));
     let tokenInfo = await xhrRequestJson<TokenInfo>(`http://localhost:${manager_port}/`,"GET",null,
             [["x-helper","anti-user"]]);
-    if ((await hash(tokenInfo.salt,tokenInfo.token)) == tokenInfo.token_salted) {
+    if ((hash(tokenInfo.salt,tokenInfo.token)) == tokenInfo.token_salted) {
         Token = tokenInfo.token;
     }
     else {

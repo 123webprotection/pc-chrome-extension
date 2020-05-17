@@ -1,5 +1,7 @@
-import { StartupInfo } from './proxy-api';
+import { StartupInfo, Token } from './proxy-api';
+import { hash } from './crypto';
 
+const bypass_header = "proxy-sha256";
 
 function runningFuncString(functionCode : string) :string {
     return "(" + functionCode + ")()";
@@ -14,16 +16,11 @@ function isChromeError(results : Array<any>) : boolean {
 }
 
 
-
 function HeadersListenerSetup() {
     chrome.webRequest.onBeforeSendHeaders.addListener(
         //https://developer.chrome.com/extensions/webRequest#type-HttpHeaders
         function(details) {
-            //TODO: sign this 3:
-                //1. details.url
-                //2. details.method
-                //3. details.type (chrome resource type)
-            details.requestHeaders.push({name:"SELFC-TYPE",value:details.type})
+            details.requestHeaders.push({name:bypass_header,value: hash(details.url, Token) })
             return { requestHeaders: details.requestHeaders };
         },
         {urls: ['<all_urls>']}, // filters
@@ -160,8 +157,7 @@ function getTokenFromManager() {
 
 let startupInfo : StartupInfo = null;
 export async function setUpExtention() {
-   
-    //HeadersListenerSetup();
+    HeadersListenerSetup();
     //setInterval(processAllSelectedTabs, 15 * 1000); 
     //tabUrlChangeListenerSetup();
 }
