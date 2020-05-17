@@ -7,13 +7,19 @@ enum BlockPhraseScope
 {
     URL= 0, BODY, ANY
 }
-interface PhraseFilter {
+
+export interface PhraseFilter {
     Scope : BlockPhraseScope,
     Type : BlockPhraseType,
     Phrase: string
 }
 
 let BlockedPhrases : Array<PhraseFilter> = [];
+export function setBlockedPhrases(phrases: PhraseFilter[]) {
+    BlockedPhrases = phrases;
+}
+
+
 
 function isLetter(char:string) : boolean {
     //https://stackoverflow.com/a/22075070/1997873
@@ -44,7 +50,7 @@ function getWords(text:string) : string[] {
             if (insideWord) {
                 insideWord = false;
                 if (currentWord.length > 0) 
-                    words.lastIndexOf(currentWord.join(""));
+                    words.push(currentWord.join(""));
                 currentWord = [];
             }
             else {/*Nothing*/}
@@ -120,7 +126,7 @@ function checkPhraseFoundWord(words : string[], filter: PhraseFilter, context: (
             found = index > -1;
             break;
         case BlockPhraseType.WORDCONTAINING:
-            index = words.findIndex((word) => word.indexOf(filter.Phrase.toLowerCase())) ;
+            index = words.findIndex((word) => word.indexOf(filter.Phrase.toLowerCase())>-1) ;
             if (index > -1)
                 _local_context = (words[index]);
             found = index > -1;
@@ -178,7 +184,7 @@ function findBlockingPhrase(Content:string, scope:BlockPhraseScope ,context: (c:
 /// <param name="Content"></param>
 /// <returns>True if content is allowed under policy</returns>
 
-function isContentAllowed(Content:string, scope:BlockPhraseScope, reason: (r:string)=>{}) : boolean
+function isContentAllowed(Content:string, scope:BlockPhraseScope, reason: (r:string)=>void) : boolean
 {
     let phraseContext = "";
     let phrase = 
@@ -189,8 +195,12 @@ function isContentAllowed(Content:string, scope:BlockPhraseScope, reason: (r:str
     }
     else {
         reason ("content blocked because scope <*" + scope 
-            + "*> equal phrase <*" + phrase
+            + "*> equal phrase <*" + phrase.Phrase
             + "*>, context: " + phraseContext);
         return false;
     }
+}
+
+export function isHTMLAllowed(Content:string, reason: (r:string)=>void) : boolean {
+    return isContentAllowed(Content, BlockPhraseScope.BODY, reason);
 }

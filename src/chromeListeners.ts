@@ -1,6 +1,7 @@
 import { StartupInfo, Token, getBlockedUrlPage as getBlockedEPPage } from './proxy-api';
 import { hash } from './crypto';
 import { PROXY_URL_PREFIX } from './index';
+import { isHTMLAllowed } from './phrases';
 
 const bypass_header = "proxy-sha256";
 
@@ -14,6 +15,14 @@ function isChromeError(results : Array<any>) : boolean {
         return true;
     }
     return false;
+}
+
+function htmlList(arr: string[]) {
+    return "<ul><li>" + arr.join("</li><li>") + "</li></ul>";
+}
+
+function htmlReason(reason:string):string {
+    return reason.replace(/\<\*/g, "<b>").replace(/\*\>/g, "</b>").replace(/_\</g, "<u>").replace(/\>\_/g, "</u>");
 }
 
 
@@ -110,13 +119,17 @@ function processAllTabFramesHTML(tabid : number) {
             results.forEach(function(str, index) {
                 if (!foundBadPhrase) {
                     var info = JSON.parse(str) as FrameContentInfo;
-                    // TODO: Filter (navigate with js - say word + url + isTop)
-                    
-                    if (info.html.indexOf("gogogo") > -1)  {
-                        foundBadPhrase = true;
-                        console.log("Found bad");
 
-                        blockTab(tabid, "Found gogo and gogo is bad");
+                    if (!info.url.startsWith(PROXY_URL_PREFIX)) // Dont filter our block page
+                    {
+                        let reason = "";
+                        if (!isHTMLAllowed(info.html, (r)=>{reason=r}))  {
+                            foundBadPhrase = true;
+                            console.log("Found bad");
+                            blockTab(tabid, htmlList([
+                                info.url, "Top Frame? " + info.top, htmlReason(reason)
+                            ]));
+                        }
                     }
                 }
             });

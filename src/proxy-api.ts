@@ -1,6 +1,7 @@
 import {  PROXY_URL_PREFIX } from './index';
 import { xhrRequestJson, xhrRequestText } from './xhr-utils';
 import {hash} from './crypto'
+import { PhraseFilter, setBlockedPhrases } from './phrases';
 
 interface TokenInfo {
     token : string,
@@ -58,3 +59,8 @@ export function getBlockedUrlPage() {
     return ProxyAPI[API_CODENAMES.blocked_page].ep;
 }
 
+export async function updatePhrases() {
+    let phrasesUrl = PROXY_URL_PREFIX + getAPIEndpoint(API_CODENAMES.get_blocked_phrases);
+    let allPhrases = await xhrRequestJson<PhraseFilter[]>(phrasesUrl,"GET");
+    setBlockedPhrases(allPhrases);
+}
