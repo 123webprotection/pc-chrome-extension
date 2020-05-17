@@ -1,4 +1,4 @@
-import { StartupInfo, Token, getBlockedUrlPage as getBlockedEPPage } from './proxy-api';
+import { StartupInfo, Token, getBlockedUrlPage as getBlockedEPPage, checkURLAllowed } from './proxy-api';
 import { hash } from './crypto';
 import { PROXY_URL_PREFIX } from './index';
 import { isHTMLAllowed } from './phrases';
@@ -25,7 +25,6 @@ function htmlReason(reason:string):string {
     return reason.replace(/\<\*/g, "<b>").replace(/\*\>/g, "</b>").replace(/_\</g, "<u>").replace(/\>\_/g, "</u>");
 }
 
-
 function HeadersListenerSetup() {
     chrome.webRequest.onBeforeSendHeaders.addListener(
         //https://developer.chrome.com/extensions/webRequest#type-HttpHeaders
@@ -45,16 +44,52 @@ function tabUrlChangeListenerSetup() {
     
     chrome.tabs.onUpdated.addListener((tabid, changeInfo, tabObj)=>{
         if (tabid && changeInfo && changeInfo.url) {
+            if (changeInfo.url.startsWith(PROXY_URL_PREFIX))
+                return;
+
             chrome.tabs.executeScript(tabid,{
                 allFrames: false,
                 code: runningFuncString(getReferrerCallback.toString())
-            }, (result)=> {
-                if (!isChromeError(result)) {
-                    var referrer : string = result[0];
-                    //console.log("tab:", tabid, "new-url:", changeInfo.url, "ref:", referrer );
+            }, async (result)=> {
+                let isBlocked : boolean = false;
+
+                let referrerURL : string = "<none>";
+                let _allowByReferrer = false
+                let _refererReason = "<refer-init>";
+
+                let new_url = changeInfo.url;
+                let new_url_reason = "<url-init>";
+
+                let urlCheck = await checkURLAllowed(new_url);
+                if (!urlCheck.blocked) {
+                    return;
                 }
                 else {
-                    //console.log("tab:", tabid, "new-url-no-referrer:", changeInfo.url);
+                    new_url_reason = urlCheck.reason;
+                    if (!isChromeError(result)) {
+                        referrerURL = result[0];
+                        let referCheck = await checkURLAllowed(referrerURL);
+                        _refererReason = "<i>Allowed to refer?</i> " + referCheck.allowReferrer;
+
+                        if (!referCheck.blocked && referCheck.allowReferrer) {
+                            _allowByReferrer = true;
+                        }
+                    }
+    
+                    if (_allowByReferrer) {
+                        return;
+                    }
+                    else
+                    {
+                        blockTab(tabid, htmlList([
+                            "<b>Referrer: </b>",
+                            referrerURL,
+                            _refererReason,
+                            "<b>Target: </b>",
+                            new_url,
+                            new_url_reason,
+                        ]))
+                    }
                 }
             })
         }

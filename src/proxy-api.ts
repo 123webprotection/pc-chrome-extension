@@ -64,3 +64,16 @@ export async function updatePhrases() {
     let allPhrases = await xhrRequestJson<PhraseFilter[]>(phrasesUrl,"GET");
     setBlockedPhrases(allPhrases);
 }
+
+interface BlockResponse {
+    blocked: boolean,
+    reason: string,
+    allowReferrer : boolean,
+    trusted : boolean
+}
+
+export async function checkURLAllowed(url:string) : Promise<BlockResponse> {
+    let checkBlockUrl = PROXY_URL_PREFIX + getAPIEndpoint(API_CODENAMES.check_blocked);
+    let blockResponse = await xhrRequestJson<BlockResponse>(checkBlockUrl,"POST",url);
+    return blockResponse;
+}
