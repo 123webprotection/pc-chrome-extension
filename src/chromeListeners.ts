@@ -9,9 +9,9 @@ function runningFuncString(functionCode : string) :string {
     return "(" + functionCode + ")()";
 }
 
-function isChromeError(results : Array<any>) : boolean {
+function isChromeError(results : Array<any>, tag:string) : boolean {
     if (chrome.runtime.lastError || !results || !results.length) {
-        console.log("Some error occurred", chrome.runtime.lastError);
+        console.log(tag,"Some error occurred", chrome.runtime.lastError);
         return true;
     }
     return false;
@@ -44,14 +44,15 @@ function tabUrlChangeListenerSetup() {
     
     chrome.tabs.onUpdated.addListener((tabid, changeInfo, tabObj)=>{
         if (tabid && changeInfo && changeInfo.url) {
-            if (changeInfo.url.startsWith(PROXY_URL_PREFIX))
+            if (changeInfo.url.startsWith(PROXY_URL_PREFIX)
+                || changeInfo.url.toLowerCase().startsWith("chrome://"))
                 return;
 
             chrome.tabs.executeScript(tabid,{
                 allFrames: false,
                 code: runningFuncString(getReferrerCallback.toString())
             }, async (result)=> {
-                let isBlocked : boolean = false;
+                let isBlocked : boolean = true; // true => Block on error
 
                 let referrerURL : string = "<none>";
                 let _allowByReferrer = false
@@ -66,7 +67,7 @@ function tabUrlChangeListenerSetup() {
                 }
                 else {
                     new_url_reason = urlCheck.reason;
-                    if (!isChromeError(result)) {
+                    if (!isChromeError(result,"[URL onUpdate]")) {
                         referrerURL = result[0];
                         let referCheck = await checkURLAllowed(referrerURL);
                         _refererReason = "<i>Allowed to refer?</i> " + referCheck.allowReferrer;
@@ -87,7 +88,7 @@ function tabUrlChangeListenerSetup() {
                             _refererReason,
                             "<b>Target: </b>",
                             new_url,
-                            new_url_reason,
+                            htmlReason(new_url_reason),
                         ]))
                     }
                 }
@@ -101,7 +102,7 @@ function processAllSelectedTabs() {
         populate: true, // Populate Tabs object
         windowTypes: ['normal', 'popup'] // no devtool
     }, function callback(windows) {
-        if (!isChromeError(windows)) {
+        if (!isChromeError(windows,"[list tabs]")) {
             for (let i = 0; i < windows.length; i++) {
                 const window = windows[i];
                 for (let j = 0; j < window.tabs.length; j++) {
@@ -148,7 +149,7 @@ function processAllTabFramesHTML(tabid : number) {
         allFrames: true,
         code: runningFuncString(getPageInfoCallback.toString())
     }, function(results : string[]) {
-        if (!isChromeError(results)) {
+        if (!isChromeError(results,"[HTML selectedTab]")) {
             var foundBadPhrase = false;
 
             results.forEach(function(str, index) {
