@@ -8,7 +8,7 @@ type TabTempHistory = {[time_id: string]: HistoryItem}
 type ParentTabInfo = {parent_tabid: number};
 
 let TabsHistories: {[tabid:number]: TabTempHistory} = {}
-let TabsParents : {[tabid:number] : ParentTabInfo }
+let TabsParents : {[tabid:number] : ParentTabInfo } = {}
 
 const keepalive_timespan = 5 * 1000;
 
@@ -16,9 +16,16 @@ function removeHistoryItem(tabid: number, time_id: string) {
     try {
         let TabHistory = TabsHistories[tabid];
         if (TabHistory) {
-            delete TabHistory[time_id];
-            if (Object.keys(TabHistory).length == 0)
-                delete TabsHistories[tabid]
+            // Keep the last until new history
+            if (Object.keys(TabHistory).length > 1)  
+            {
+                delete TabHistory[time_id];
+            }
+            else 
+            {
+                // Try again later
+                setTimeout(()=>{removeHistoryItem(tabid, time_id);},keepalive_timespan)
+            }
         }
     } catch (error) {
         console.error("[REMOVE-HISTORY-ITEM]", new Date(), error)

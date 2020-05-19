@@ -2,6 +2,7 @@ import { StartupInfo, Token, getBlockedUrlPage as getBlockedEPPage, checkURLAllo
 import { hash } from './crypto';
 import { PROXY_URL_PREFIX } from './index';
 import { isHTMLAllowed } from './phrases';
+import { setTabParent, closeTab, addHistory, getLatestReferrer } from './tabHistory';
 
 const bypass_header = "proxy-sha256";
 
@@ -38,24 +39,15 @@ function HeadersListenerSetup() {
 }
 
 function tabUrlChangeListenerSetup() {
-    function getReferrerCallback() {
-        return document.referrer;
-    }
-    
-    chrome.tabs.onUpdated.addListener((tabid, changeInfo, tabObj)=>{
+    chrome.tabs.onUpdated.addListener(async (tabid, changeInfo, tabObj)=>{
         if (tabid && changeInfo && changeInfo.url) {
+            addHistory(tabid,changeInfo.url,new Date());
+
             if (changeInfo.url.startsWith(PROXY_URL_PREFIX)
                 || changeInfo.url.toLowerCase().startsWith("chrome://"))
                 return;
 
-            chrome.tabs.executeScript(tabid,{
-                allFrames: false,
-                code: runningFuncString(getReferrerCallback.toString())
-            }, async (result)=> {
-                let isBlocked : boolean = true; // true => Block on error
-
-                let referrerURL : string = "<none>";
-                let _allowByReferrer = false
+                let referrerURL : string = getLatestReferrer(tabid, new Date());
                 let _refererReason = "<refer-init>";
 
                 let new_url = changeInfo.url;
@@ -67,17 +59,11 @@ function tabUrlChangeListenerSetup() {
                 }
                 else {
                     new_url_reason = urlCheck.reason;
-                    if (!isChromeError(result,"[URL onUpdate]")) {
-                        referrerURL = result[0];
-                        let referCheck = await checkURLAllowed(referrerURL);
-                        _refererReason = "<i>Allowed to refer?</i> " + referCheck.allowReferrer;
 
-                        if (!referCheck.blocked && referCheck.allowReferrer) {
-                            _allowByReferrer = true;
-                        }
-                    }
-    
-                    if (_allowByReferrer) {
+                    let referCheck = await checkURLAllowed(referrerURL);
+                    _refererReason = "<i>Allowed to refer?</i> " + referCheck.allowReferrer;
+
+                    if (!referCheck.blocked && referCheck.allowReferrer) {
                         return;
                     }
                     else
@@ -92,7 +78,6 @@ function tabUrlChangeListenerSetup() {
                         ]))
                     }
                 }
-            })
         }
     });
 }
@@ -200,9 +185,22 @@ function blockTab(tabid: number, reason_html: string) {
     });
 }
 
+function setUpReferrerListeners() {
+    chrome.tabs.onCreated.addListener((tab)=> {
+        if (tab.openerTabId) {
+            setTabParent(tab.id, tab.openerTabId);
+        }
+    })
+
+    chrome.tabs.onRemoved.addListener((tabid, info)=>{
+        closeTab(tabid);
+    })
+}
+
 
 let startupInfo : StartupInfo = null;
 export async function setUpExtention() {
+    setUpReferrerListeners();
     HeadersListenerSetup();
     setInterval(processAllSelectedTabs, 2 * 1000); 
     tabUrlChangeListenerSetup();
