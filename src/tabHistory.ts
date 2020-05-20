@@ -16,8 +16,8 @@ function removeHistoryItem(tabid: number, time_id: string) {
     try {
         let TabHistory = TabsHistories[tabid];
         if (TabHistory) {
-            // Keep the last until new history
-            if (Object.keys(TabHistory).length > 1)  
+            // Keep the last until new history (in same tab: 1 current + 1 before)
+            if (Object.keys(TabHistory).length > 2)  
             {
                 delete TabHistory[time_id];
             }
@@ -47,32 +47,38 @@ export function addHistory(tabid: number, url: string, time: Date) {
    }
 }
 
+export function getLatestUrl(tabid : number, before : Date) {
+    let result :HistoryItem = {url:"",time: null}
+
+    let TabHistory = TabsHistories[tabid]
+    if (TabHistory) {
+        let history_enteries_desc = 
+            Object.keys(TabHistory)
+            .map((value)=>TabHistory[value])
+            .sort((a,b)=> -1 * ( a.time.getTime() - b.time.getTime()));
+        
+        for (let i = 0; i < history_enteries_desc.length; i++) {
+            const history = history_enteries_desc[i];
+            if (history.time < before){
+                result =  history;
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
 export function getLatestReferrer(tabid: number, before: Date) : string {
     let result = "";
     try {
-        let TabHistory = TabsHistories[tabid]
-        if (TabHistory) {
-            let history_enteries_desc = 
-                Object.keys(TabHistory)
-                .map((value)=>TabHistory[value])
-                .sort((a,b)=> -1 * ( a.time.getTime() - b.time.getTime()));
-            
-            let found = false;
-            for (let i = 0; i < history_enteries_desc.length; i++) {
-                const history = history_enteries_desc[i];
-                if (history.time < before){
-                    result = history.url;
-                    found = true;
-                    break;
-                }
-            }
+        result = getLatestUrl(tabid, before).url;
 
-            if (!found) {
-                let parentInfo = TabsParents[tabid];
-                if (parentInfo) {
-                    // Recursive try to get referer from parent
-                    result = getLatestReferrer(parentInfo.parent_tabid, before);
-                }
+        if (result == "") {
+            // Recursive try to get referer from parent
+            let parentInfo = TabsParents[tabid];
+            if (parentInfo) {
+                result = getLatestReferrer(parentInfo.parent_tabid, before);
             }
         }
     } catch (error) {

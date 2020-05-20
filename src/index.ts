@@ -24,5 +24,7 @@ async function main() {
     }
 }
 
-main()
-    .then(()=>{console.log("Done starting.")});
+if (!window.location.pathname.endsWith("popup.html"))  {
+    main()
+        .then(()=>{console.log("Done starting.")});
+}
