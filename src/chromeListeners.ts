@@ -12,9 +12,35 @@ function runningFuncString(functionCode : string) :string {
 }
 
 
+function htmlList(arr: any[]) {
+    let result = "<ul style=\"text-align: left;\">";
+    for (let i = 0; i < arr.length; i++) {
+        const element = arr[i];
+        
+        result += "<li>";
 
-function htmlList(arr: string[]) {
-    return "<ul><li>" + arr.join("</li><li>") + "</li></ul>";
+        if (typeof element == "string") {
+            let e : string = element as string;
+            if (e.startsWith("***")) {
+                result += `<b>${element.substr(3)}</b>`
+            }
+            else {
+                result += `${element}`
+            }
+        }
+        else {
+            result += String(element);
+        }
+    
+        if (i + 1 < arr.length && Array.isArray(arr[i+1])) {
+            result += htmlList(arr[i+1]);
+            i++; // skip the array
+        } 
+
+        result += "</li>";
+    }
+    result += "</ul>";
+    return result;
 }
 
 function htmlReason(reason:string):string {
@@ -63,12 +89,20 @@ function tabUrlChangeListenerSetup() {
                 else
                 {
                     blockTab(tabid, htmlList([
-                        "<b>Referrer: </b>",
-                        referrerURL,
-                        _refererReason,
-                        "<b>Target: </b>",
-                        new_url,
-                        htmlReason(new_url_reason),
+                        "***Referrer:",
+                        [
+                            "***URL:",
+                            [   referrerURL],
+                            "***Reason:",
+                            [     htmlReason(_refererReason)]
+                        ],
+                        "***Target:",
+                        [
+                            "***URL:",
+                            [    new_url ],
+                            "***Reason:", 
+                            [    htmlReason(new_url_reason)]
+                        ]
                     ]))
                 }
             }
@@ -141,9 +175,19 @@ function processAllTabFramesHTML(tabid : number) {
                         if (!isHTMLAllowed(info.html, (r)=>{reason=r}))  {
                             foundBadPhrase = true;
                             console.log("Found bad");
-                            blockTab(tabid, htmlList([
-                                info.url, "Top Frame? " + info.top, htmlReason(reason)
-                            ]));
+                            blockTab(tabid, htmlList(
+                            [
+                                "***Source Frame:", [
+                                    "***Main/Top Frame?",
+                                    [info.top],
+                                    "***URL:",
+                                    [info.url]
+                                ],
+                                "***Reason:",[
+                                    htmlReason(reason)
+                                ]
+                            ]
+                            ));
                         }
                     }
                 }
@@ -156,17 +200,17 @@ function blockTab(tabid: number, reason_html: string) {
     let blocked_url = `${PROXY_URL_PREFIX}${getBlockedEPPage()}`;
 
     function blockPageCallback() {
-        window.location.href = "@";
+        window.location.href = ({} as any).data;
     }
 
     function setReason(reason: string) {
-        document.getElementById("reason").innerHTML = "@"
+        document.getElementById("reason").innerHTML = ({} as any).data
     }
 
     let navigateFunction = 
-        runningFuncString(blockPageCallback.toString()).replace("@",blocked_url);
+        runningFuncString(blockPageCallback.toString()).replace("{}",JSON.stringify({data:blocked_url}));
     let changeReasonFunction = 
-        runningFuncString(setReason.toString()).replace("@", reason_html);
+        runningFuncString(setReason.toString()).replace("{}",JSON.stringify({data:reason_html}));
 
     chrome.tabs.executeScript(tabid, {
         code: navigateFunction
