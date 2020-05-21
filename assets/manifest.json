@@ -1,7 +1,7 @@
 {
-    "name": "selfc-ext",
+    "name": "123webprotection",
     "version": "1.0",
-    "description": "SelfCAC Chrome Ext",
+    "description": "123webprotection extension for chrome",
     "manifest_version": 2,
     "background": {
         "scripts": ["bundle.js"],
@@ -19,9 +19,12 @@
       "default_popup": "popup.html",
       "default_icon": {
         "16":  "images/16.png",
-        "32":  "images/32.png",
-        "48":  "images/48.png",
         "128": "images/128.png"
       }
+    },
+    "icons": {
+      "32":  "images/32.png",
+      "48":  "images/48.png",
+      "128": "images/128.png"
     }
   }
