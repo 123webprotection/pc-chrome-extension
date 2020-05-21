@@ -3,7 +3,7 @@
 
 
 type HistoryItem = {time:Date, url: string};
-type TabTempHistory = {[time_id: string]: HistoryItem}
+type TabTempHistory = HistoryItem[]
 
 type ParentTabInfo = {parent_tabid: number};
 
@@ -12,19 +12,20 @@ let TabsParents : {[tabid:number] : ParentTabInfo } = {}
 
 const keepalive_timespan = 5 * 1000;
 
-function removeHistoryItem(tabid: number, time_id: string) {
+function removeHistoryItem(tabid: number) {
     try {
         let TabHistory = TabsHistories[tabid];
         if (TabHistory) {
             // Keep the last until new history (in same tab: 1 current + 1 before)
-            if (Object.keys(TabHistory).length > 2)  
+            if (TabHistory.length > 2)  
             {
-                delete TabHistory[time_id];
+                let lastIndex = TabHistory.length; // in terms of slice
+                TabsHistories[tabid]=  TabHistory.slice(lastIndex - 2, lastIndex );
             }
             else 
             {
                 // Try again later
-                setTimeout(()=>{removeHistoryItem(tabid, time_id);},keepalive_timespan)
+                setTimeout(()=>{removeHistoryItem(tabid);},keepalive_timespan)
             }
         }
     } catch (error) {
@@ -37,11 +38,12 @@ export function addHistory(tabid: number, url: string, time: Date) {
         let time_id = `${time.getTime()}_${Math.random()}`;
         let historyItem : HistoryItem = {time,url};
 
-        let TabHistory = (TabsHistories[tabid] || {})
-        TabHistory[time_id] = historyItem
+        let TabHistory = (TabsHistories[tabid] || [])
+        if (TabHistory.length == 0 || TabHistory[TabHistory.length-1].url != url) // Don't duplicate on refresh
+            TabHistory.push(historyItem)
         TabsHistories[tabid] = TabHistory
 
-        setTimeout(()=>{removeHistoryItem(tabid, time_id);},keepalive_timespan)
+        setTimeout(()=>{removeHistoryItem(tabid);},keepalive_timespan)
    } catch (error) {
         console.error("[ADD-HISTORY-ITEM]", new Date(), error)
    }
@@ -52,13 +54,9 @@ export function getLatestUrl(tabid : number, before : Date) {
 
     let TabHistory = TabsHistories[tabid]
     if (TabHistory) {
-        let history_enteries_desc = 
-            Object.keys(TabHistory)
-            .map((value)=>TabHistory[value])
-            .sort((a,b)=> -1 * ( a.time.getTime() - b.time.getTime()));
-        
-        for (let i = 0; i < history_enteries_desc.length; i++) {
-            const history = history_enteries_desc[i];
+
+        for (let i = TabHistory.length - 1; i > -1; i--) {
+            const history = TabHistory[i];
             if (history.time < before){
                 result =  history;
                 break;
@@ -100,3 +98,11 @@ export function closeTab(tabid: number) {
         console.error("[CLOSE-TAB-HISTORY]", new Date(), error)
     }
 }
+
+function printHistoryState() { // For debugging
+    console.log("History", TabsHistories);
+    console.log("Parents", TabsParents)
+}
+
+if (!window.location.href.endsWith("popup.html"))
+    (window as any)["printHistoryState"] = printHistoryState
