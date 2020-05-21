@@ -11,7 +11,6 @@ function runningFuncString(functionCode : string) :string {
     return "(" + functionCode + ")()";
 }
 
-
 function htmlList(arr: any[]) {
     let result = "<ul style=\"text-align: left;\">";
     for (let i = 0; i < arr.length; i++) {
@@ -59,55 +58,92 @@ function HeadersListenerSetup() {
     );
 }
 
-function tabUrlChangeListenerSetup() {
-    chrome.tabs.onUpdated.addListener(async (tabid, changeInfo, tabObj)=>{
-        if (tabid && changeInfo && changeInfo.url) {
-            let referrerURL : string = getLatestReferrer(tabid, new Date());
-            addHistory(tabid,changeInfo.url,new Date());
+function isUserAction(ttype: string, tqualifier: string[]): boolean {
+    //https://developer.chrome.com/extensions/history#transition_types
+    let blocked_TTypes = ["typed","auto_bookmark","generated","auto_toplevel","keyword","keyword_generated"];
+    
+    //https://developer.chrome.com/extensions/webNavigation#transition_types
+    let blocked_TQualifiers = ["from_address_bar"]
+    return (
+        blocked_TTypes.indexOf(ttype) > -1  || 
+        tqualifier.findIndex((q)=>blocked_TQualifiers.indexOf(q) > -1) > -1
+    );
+}
 
-            if (shouldSkip(changeInfo.url))
+async function enforcePolicyNavigation(tabid:number, url:string, ignore_ref : boolean,
+     addToHistory : boolean = true) {
+    console.log("UPDATE",tabid, url);
+
+    let referrerURL : string = getLatestReferrer(tabid, new Date());
+    if (addHistory)
+        addHistory(tabid,url,new Date());
+
+    if (shouldSkip(url))
+        return;
+
+    let _refererReason = ignore_ref ? "Referer only on navigation" : "<refer-init>";
+
+    let new_url = url;
+    let new_url_reason = "<url-init>";
+
+    let urlCheck = await checkURLAllowed(new_url);
+    if (!urlCheck.blocked) {
+        return;
+    }
+    else {
+        new_url_reason = urlCheck.reason;
+
+        if (!ignore_ref) {
+            let referCheck = await checkURLAllowed(referrerURL);
+            _refererReason = "<i>Allowed to refer?</i> " + referCheck.allowReferrer;
+    
+            if (!referCheck.blocked && referCheck.allowReferrer) {
                 return;
-
-            let _refererReason = "<refer-init>";
-
-            let new_url = changeInfo.url;
-            let new_url_reason = "<url-init>";
-
-            let urlCheck = await checkURLAllowed(new_url);
-            if (!urlCheck.blocked) {
-                return;
-            }
-            else {
-                new_url_reason = urlCheck.reason;
-
-                let referCheck = await checkURLAllowed(referrerURL);
-                _refererReason = "<i>Allowed to refer?</i> " + referCheck.allowReferrer;
-
-                if (!referCheck.blocked && referCheck.allowReferrer) {
-                    return;
-                }
-                else
-                {
-                    blockTab(tabid, htmlList([
-                        "***Referrer:",
-                        [
-                            "***URL:",
-                            [   referrerURL],
-                            "***Reason:",
-                            [     htmlReason(_refererReason)]
-                        ],
-                        "***Target:",
-                        [
-                            "***URL:",
-                            [    new_url ],
-                            "***Reason:", 
-                            [    htmlReason(new_url_reason)]
-                        ]
-                    ]))
-                }
             }
         }
-    });
+        
+        blockTab(tabid, htmlList([
+            "***Referrer:",
+            [
+                "***URL:",
+                [   referrerURL],
+                "***Reason:",
+                [     htmlReason(_refererReason)]
+            ],
+            "***Target:",
+            [
+                "***URL:",
+                [    new_url ],
+                "***Reason:", 
+                [    htmlReason(new_url_reason)]
+            ]
+        ]))
+    }
+}
+
+function tabUrlChangeListenerSetup() {
+    /*
+    Old: problem was we can't detect user typed url
+    
+    chrome.tabs.onUpdated.addListener(async (tabid, changeInfo, tabObj)=>{
+        if (tabid && changeInfo && changeInfo.url) {
+            await enforcePolicyNavigation(tabid, changeInfo.url, false);
+        }
+    });*/
+
+    chrome.webNavigation.onCommitted.addListener((details_nav)=>{
+        chrome.webNavigation.getFrame(
+            {tabId: details_nav.tabId, frameId: details_nav.frameId},
+            async (details_frame)=> {
+                if (details_frame && details_frame.parentFrameId == -1) { // The navigating frame is top frame
+                    await enforcePolicyNavigation(details_nav.tabId, details_nav.url,
+                        isUserAction(details_nav.transitionType, details_nav.transitionQualifiers),
+                        !details_nav.url.startsWith(PROXY_URL_PREFIX));
+            }
+        })
+    })
+
+    
 }
 
 function processAllSelectedTabs() {
