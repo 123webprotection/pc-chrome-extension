@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build:win": "webpack && xcopy assets dist /R /E /Y",
+    "build:win": "rd /s /q \"dist\" &&webpack && xcopy assets dist /R /E /Y",
     "chrome": "node_modules\\chromium\\lib\\chromium\\chrome-win\\chrome.exe --proxy-server=\"http://127.0.0.1:8080;https://127.0.0.1:8080\"",
     "start": "npm run build:win && npm run chrome"
   },
