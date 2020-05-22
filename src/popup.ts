@@ -4,17 +4,22 @@ import { PROXY_URL_PREFIX } from './index';
 /*
 * ============== BACK ==============
 */
-type get_string = ()=>string;
+type get_string = ()=> [string, string];
 type get_refer_info = (tabid:number)=>{url:string, referer: string}
 
-let ext_error :string = "";
+let ext_state : [string,string] = ["state","status"];
 export function updateUiStatus(status : string) {
     console.log("[UI-STATUS]",new Date(), status);
-    ext_error = status;
+    ext_state = [ext_state[0], status];
+} 
+
+export function updateUiState(state : string) {
+    console.log("[UI-STATE-]",new Date(), state);
+    ext_state = [state, ext_state[1]];
 } 
 
 let getStatus : get_string = () => {
-    return ext_error;
+    return ext_state;
 };
 
 let getReferInfo : get_refer_info = (tabid:number) => {
@@ -63,9 +68,12 @@ async function front_getTabInfo() : Promise<TabInfo> {
 }
 
 function updateStatusText() {
-    var error_span = document.getElementById("error");
-    if (error_span)
-        document.getElementById("error").innerText = front_getStatus();
+    let state = document.getElementById("state");
+    let status = document.getElementById("status");
+    let latestStatus = front_getStatus();
+    if (state && status)
+        state.innerText = latestStatus[0];
+        status.innerText = latestStatus[1];
 }
 
 function updateSpan(id: string, value: string, maxLen:number = 25) {

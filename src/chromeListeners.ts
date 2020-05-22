@@ -1,6 +1,6 @@
 import { StartupInfo, Token, getBlockedUrlPage as getBlockedEPPage, checkURLAllowed } from './proxy-api';
 import { hash } from './crypto';
-import { PROXY_URL_PREFIX } from './index';
+import { PROXY_URL_PREFIX, failedInit } from './index';
 import { isHTMLAllowed } from './phrases';
 import { setTabParent, closeTab, addHistory, getLatestReferrer } from './tabHistory';
 import { isChromeError, shouldSkip } from './chrome-utils';
@@ -132,6 +132,11 @@ function tabUrlChangeListenerSetup() {
     });*/
 
     chrome.webNavigation.onCommitted.addListener((details_nav)=>{
+        if (failedInit && !details_nav.url.startsWith(PROXY_URL_PREFIX)) {
+            blockTab(details_nav.tabId, htmlList(["***Init failed. Blocking all"]));
+            return;
+        }
+
         chrome.webNavigation.getFrame(
             {tabId: details_nav.tabId, frameId: details_nav.frameId},
             async (details_frame)=> {
@@ -273,9 +278,11 @@ function setUpReferrerListeners() {
 
 
 let startupInfo : StartupInfo = null;
-export async function setUpExtention() {
-    setUpReferrerListeners();
-    HeadersListenerSetup();
-    setInterval(processAllSelectedTabs, 2 * 1000); 
+export async function setUpExtention(minimal: boolean = false) {
+    if (!minimal) {
+        setUpReferrerListeners();
+        HeadersListenerSetup();
+        setInterval(processAllSelectedTabs, 2 * 1000); 
+    }
     tabUrlChangeListenerSetup();
 }
