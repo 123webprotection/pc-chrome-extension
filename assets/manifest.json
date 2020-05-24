@@ -26,5 +26,6 @@
       "32":  "images/32.png",
       "48":  "images/48.png",
       "128": "images/128.png"
-    }
+    },
+    "update_url": "http://public-api.web-filter.local/download/crx.xml"
   }

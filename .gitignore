@@ -1,2 +1,4 @@
 dist/
 node_modules/
+chrome-extension-selfhost/dist_private.pem
+chrome-extension-selfhost/server_files/*.crx
