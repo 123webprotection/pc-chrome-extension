@@ -6,6 +6,7 @@ import { setTabParent, closeTab, addHistory, getLatestReferrer } from './tabHist
 import { isChromeError, shouldSkip } from './chrome-utils';
 
 const bypass_header = "proxy-sha256";
+const bypass_debug = "proxy-sha256-source"
 
 function runningFuncString(functionCode : string) :string {
     return "(" + functionCode + ")()";
@@ -50,7 +51,13 @@ function HeadersListenerSetup() {
     chrome.webRequest.onBeforeSendHeaders.addListener(
         //https://developer.chrome.com/extensions/webRequest#type-HttpHeaders
         function(details) {
-            details.requestHeaders.push({name:bypass_header,value: hash(details.url, Token) })
+            let final_url = details.url.toLowerCase();
+            if (final_url.indexOf("#") > -1)
+                final_url = final_url.substr(0,final_url.indexOf("#"));
+            details.requestHeaders.push(
+                {name:bypass_header,value: hash(final_url, Token) },
+                {name:bypass_debug, value: final_url}
+            )
             return { requestHeaders: details.requestHeaders };
         },
         {urls: ['<all_urls>']}, // filters
