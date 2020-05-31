@@ -6,7 +6,8 @@
   "scripts": {
     "build:win": "rd /s /q \"dist\" && webpack && xcopy assets dist /R /E /Y",
     "chrome": "node_modules\\chromium\\lib\\chromium\\chrome-win\\chrome.exe --proxy-server=\"http://127.0.0.1:8080;https://127.0.0.1:8080\"",
-    "start": "npm run build:win && npm run chrome"
+    "start": "npm run build:win && npm run chrome",
+    "pack" : "del chrome-extension-selfhost\\server_files\\dist.crx && node_modules\\chromium\\lib\\chromium\\chrome-win\\chrome.exe --pack-extension=C:\\Users\\Yoni\\Desktop\\selfc\\chrome-extension\\dist --pack-extension-key=C:\\Users\\Yoni\\Desktop\\selfc\\chrome-extension\\chrome-extension-selfhost\\dist_private.pem && move dist.crx chrome-extension-selfhost\\server_files"
   },
   "keywords": [],
   "author": "",
